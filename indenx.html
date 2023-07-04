@@ -76,17 +76,17 @@
     <!-- Design from: https://static.collectui.com/shots/3671744/musicloud-revolutionary-app-for-music-streaming-large -->
     <script>
       /*
-    1. Render song --- Ok
-    2. Scroll top  --- Ok
-    3. Play / Pause / seek --- Ok
-    4. CD rotate --- Ok
-    5. Next / prev 
-    6. Ramdom
-    7. Next / repeat when ended
-    8. Active song
-    9. Scroll active song into view
-    10. Play song when click 
-    */
+      1. Render song --- Ok
+      2. Scroll top  --- Ok
+      3. Play / Pause / seek --- Ok
+      4. CD rotate --- Ok
+      5. Next / prev --- Ok
+      6. Ramdom --- Ok
+      7. Next / repeat when ended --- Ok
+      8. Active song --- Ok
+      9. Scroll active song into view --- Ok
+      10. Play song when click ---
+      */
       const $ = document.querySelector.bind(document);
       const $$ = document.querySelectorAll.bind(document);
       const player = $(".player");
@@ -96,10 +96,17 @@
       const progress = $("#progress");
       const audio = $("#audio");
       const playBtn = $(".btn-toggle-play");
+      const nextBtn = $(".btn-next");
+      const prevBtn = $(".btn-prev");
+      const randomBtn = $(".btn-random");
+      const repeatBtn = $(".btn-repeat");
+      const playList = $(".playlist");
 
       const app = {
         currentIndex: 0,
         isPlaying: false,
+        isRandom: false,
+        isRepeat: false,
         songs: [
           {
             name: "Cảm nhận",
@@ -131,6 +138,24 @@
             path: "./assets/music/song5.mp3",
             image: "./assets/image/image5.jpg",
           },
+          {
+            name: "Trời ơi con chưa muốn chết",
+            singer: "Đen Vâu",
+            path: "./assets/music/song5.mp3",
+            image: "./assets/image/image5.jpg",
+          },
+          {
+            name: "Trời ơi con chưa muốn chết",
+            singer: "Đen Vâu",
+            path: "./assets/music/song5.mp3",
+            image: "./assets/image/image5.jpg",
+          },
+          {
+            name: "Trời ơi con chưa muốn chết",
+            singer: "Đen Vâu",
+            path: "./assets/music/song5.mp3",
+            image: "./assets/image/image5.jpg",
+          },
         ],
 
         defineProperties: function () {
@@ -140,6 +165,32 @@
             },
           });
         },
+
+        render: function () {
+          // Tạo danh sách nhạc, chọc vào songs, tạo ra một cái list
+          const htmls = this.songs.map((song, index) => {
+            return `
+                <div class="song ${
+                  index === this.currentIndex ? "active" : ""
+                }" data-index = "${index}">
+                    <div class="thumb" style="background-image: url('${
+                      song.image
+                    }')">
+                    </div>
+                    <div class="body">
+                        <h3 class="title">${song.name}</h3>
+                        <p class="author">${song.singer}</p>
+                    </div>
+                    <div class="option">
+                        <i class="fas fa-ellipsis-h"></i>
+                    </div>
+                </div>
+                `;
+          });
+          // Chọc vào lớp Class để thêm danh sách song vào class playlist
+          playList.innerHTML = htmls.join("");
+        },
+
         handleEvent: function () {
           // Xử lý thu phóng khi scroll lên xuống
           const cdWidth = cd.offsetWidth;
@@ -153,14 +204,14 @@
           };
 
           // cd thunmb
-          const cdThumbApi = cdThumb.animate(
-            [{ transform: "rotate(360deg)" }],
+          const cdThumbAnimate = cdThumb.animate(
+            { transform: "rotate(360deg)" },
             {
-              duration: 20000,
+              duration: 10000,
               iterations: Infinity,
             }
           );
-          cdThumbApi.pause();
+          cdThumbAnimate.pause(); //Dừng khi mới bắt đầu
 
           // Xử lý nút play/pause
           playBtn.onclick = function () {
@@ -170,17 +221,18 @@
               audio.play();
             }
           };
-          // xử lý khi phát nhạc
+
+          // xử lý khi muốn phát nhạc
           audio.onplay = function () {
             app.isPlaying = true;
             player.classList.add("playing");
-            cdThumbApi.play();
+            cdThumbAnimate.play();
           };
-          // xử lý khi dừng nhạc
+          // xử lý khi muốn dừng nhạc
           audio.onpause = function () {
             app.isPlaying = false;
             player.classList.remove("playing");
-            cdThumbApi.pause();
+            cdThumbAnimate.pause();
           };
 
           //xử lý khi chỉnh nhạc
@@ -199,6 +251,64 @@
             const seekTime = (audio.duration / 100) * e.target.value;
             audio.currentTime = seekTime;
           };
+
+          // Next bai nhac tiep theo
+          nextBtn.onclick = function () {
+            if (app.isRandom) {
+              app.randomSong();
+            } else {
+              app.nextSong();
+            }
+            audio.play();
+            app.render();
+            app.scrollToActiveSong();
+          };
+          // Tro ve bai truoc
+          prevBtn.onclick = function () {
+            if (app.isRandom) {
+              app.randomSong();
+            } else {
+              app.prevSong();
+            }
+            audio.play();
+            app.render();
+            app.scrollToActiveSong();
+          };
+          //Xu ly random
+          randomBtn.onclick = function () {
+            app.isRandom = !app.isRandom;
+            randomBtn.classList.toggle("active", app.isRandom);
+          };
+
+          //Xu ly next song khi ket thuc bai hat
+          // Chinh sua bug han che lap lai bai hat khi chua hat het danh sach
+          audio.onended = function () {
+            if (app.isRepeat) {
+              audio.play();
+            } else {
+              nextBtn.onclick();
+            }
+          };
+
+          //Xu ly nut lap lai 1 bai hat
+          repeatBtn.onclick = function () {
+            app.isRepeat = !app.isRepeat;
+            repeatBtn.classList.toggle("active", app.isRepeat);
+          };
+
+          playList.onclick = function (e) {
+            const songNode = e.target.closest(".song:not(.active)");
+            // Xu ly click vao song
+            if (songNode || e.target.closest(".option")) {
+              app.currentIndex = Number(songNode.dataset.index);
+              app.loadCurrentSong();
+              app.render();
+              audio.play();
+            }
+            //Xu ly click vao option
+            if (e.target.closest(".option")) {
+            }
+          };
         },
 
         loadCurrentSong: function () {
@@ -206,25 +316,36 @@
           cdThumb.style.backgroundImage = `url('${this.currentSong.image}')`;
           audio.src = this.currentSong.path;
         },
-        render: function () {
-          // Tạo danh sách nhạc, chọc vào songs, tạo ra một cái list
-          const htmls = this.songs.map((song) => {
-            return `
-              <div class="song">
-                  <div class="thumb" style="background-image: url('${song.image}')">
-                  </div>
-                  <div class="body">
-                      <h3 class="title">${song.name}</h3>
-                      <p class="author">${song.singer}</p>
-                  </div>
-                  <div class="option">
-                      <i class="fas fa-ellipsis-h"></i>
-                  </div>
-              </div>
-              `;
-          });
-          // Chọc vào lớp Class để thêm danh sách song vào class playlist
-          $(".playlist").innerHTML = htmls.join("");
+        nextSong: function () {
+          app.currentIndex++;
+          if (app.currentIndex >= app.songs.length) {
+            app.currentIndex = 0;
+          }
+          app.loadCurrentSong();
+        },
+        prevSong: function () {
+          app.currentIndex--;
+          if (app.currentIndex < 0) {
+            app.currentIndex = app.songs.length - 1;
+          }
+          app.loadCurrentSong();
+        },
+        randomSong: function () {
+          let newIndex;
+          do {
+            newIndex = Math.floor(Math.random() * app.songs.length);
+          } while (newIndex === app.currentIndex);
+          app.currentIndex = newIndex;
+          app.loadCurrentSong();
+        },
+
+        scrollToActiveSong: function () {
+          setTimeout(() => {
+            $(".song.active").scrollIntoView({
+              behavior: "smooth",
+              block: "nearest",
+            });
+          }, 300);
         },
 
         start: function () {
