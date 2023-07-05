@@ -89,6 +89,8 @@
       */
       const $ = document.querySelector.bind(document);
       const $$ = document.querySelectorAll.bind(document);
+      const PLAYER_STORAGE_KEY = "WINDY_PLAYER";
+
       const player = $(".player");
       const heading = $("header h2");
       const cd = $(".cd");
@@ -107,6 +109,8 @@
         isPlaying: false,
         isRandom: false,
         isRepeat: false,
+        //
+        config: JSON.parse(localStorage.getItem(PLAYER_STORAGE_KEY)) || {},
         songs: [
           {
             name: "Cảm nhận",
@@ -158,6 +162,10 @@
           },
         ],
 
+        setConfig: function (key, value) {
+          this.config[key] = value;
+          localStorage.setItem(PLAYER_STORAGE_KEY, JSON.stringify(this.config));
+        },
         defineProperties: function () {
           Object.defineProperty(this, "currentSong", {
             get: function () {
@@ -277,6 +285,7 @@
           //Xu ly random
           randomBtn.onclick = function () {
             app.isRandom = !app.isRandom;
+            app.setConfig("isRandom", app.isRandom); // Dat gia tri vao config
             randomBtn.classList.toggle("active", app.isRandom);
           };
 
@@ -293,6 +302,7 @@
           //Xu ly nut lap lai 1 bai hat
           repeatBtn.onclick = function () {
             app.isRepeat = !app.isRepeat;
+            app.setConfig("isRepeat", app.isRepeat); // Dat gia tri vao config
             repeatBtn.classList.toggle("active", app.isRepeat);
           };
 
@@ -316,6 +326,13 @@
           cdThumb.style.backgroundImage = `url('${this.currentSong.image}')`;
           audio.src = this.currentSong.path;
         },
+
+        // Load lai cai config luu cac active khi bam vao
+        loadConfig: function () {
+          this.isRandom = this.config.isRandom;
+          this.isRepeat = this.config.isRepeat;
+        },
+
         nextSong: function () {
           app.currentIndex++;
           if (app.currentIndex >= app.songs.length) {
@@ -349,6 +366,9 @@
         },
 
         start: function () {
+          // gan cau hinh va config vao ung dung
+          this.loadConfig();
+
           //Định nghĩa cái Object
           this.defineProperties();
 
@@ -360,6 +380,10 @@
 
           //render list nhạc
           this.render();
+
+          // Hiển thị trạng thái ban đầu của button repreat, random
+          randomBtn.classList.toggle("active", app.isRandom);
+          repeatBtn.classList.toggle("active", app.isRepeat);
         },
       };
       // Gọi hàm chạy cho chương trình
